@@ -25,7 +25,7 @@
                 // do common initialization independent of player type
                 this.init(el, config);
 
-                _.bindAll(this, 'playVideo', 'onReady');
+                _.bindAll(this, 'playVideo', 'pauseVideo', 'onReady');
 
                 // If we have only HLS sources and browser doesn't support HLS then show error message.
                 if (config.HLSOnlySources && !config.canPlayHLS) {
@@ -45,14 +45,6 @@
                     this.hls = new HLS({autoStartLoad: false});
                     this.hls.loadSource(config.videoSources[0]);
                     this.hls.attachMedia(this.video);
-
-                    this.showLoadingOnce = _.once(function() {
-                        HTML5Video.Player.prototype.updatePlayerLoadingState.apply(self, ['show']);
-                    });
-
-                    this.hideLoadingOnce = _.once(function() {
-                        HTML5Video.Player.prototype.updatePlayerLoadingState.apply(self, ['hide']);
-                    });
 
                     this.hls.on(HLS.Events.ERROR, this.onError.bind(this));
 
@@ -77,7 +69,6 @@
                                 resolution: level.width + 'x' + level.height
                             }
                         );
-                        self.hideLoadingOnce();
                     });
                 }
             }
@@ -86,11 +77,24 @@
             Player.prototype.constructor = Player;
 
             Player.prototype.playVideo = function() {
+                HTML5Video.Player.prototype.updatePlayerLoadingState.apply(this, ['show']);
                 if(!this.config.browserIsSafari) {
                     this.hls.startLoad();
-                    this.showLoadingOnce();
                 }
-                this.video.play();
+                HTML5Video.Player.prototype.playVideo.apply(this);
+            };
+
+            Player.prototype.pauseVideo = function() {
+                HTML5Video.Player.prototype.pauseVideo.apply(this);
+                HTML5Video.Player.prototype.updatePlayerLoadingState.apply(this, ['hide']);
+                if(!this.config.browserIsSafari) {
+                    this.hls.stopLoad();
+                }
+            };
+
+            Player.prototype.onPlaying = function() {
+                HTML5Video.Player.prototype.onPlaying.apply(this);
+                HTML5Video.Player.prototype.updatePlayerLoadingState.apply(this, ['hide']);
             };
 
             Player.prototype.onReady = function() {
